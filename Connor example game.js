@@ -217,8 +217,8 @@ class Outro extends Phaser.Scene {
     create() {
         var campfire = this.add.image(910, 640, 'campfire');
         campfire.setScale(500/campfire.height,500/campfire.width);
-        this.add.text(300,50, "Summary").setFontSize(100);
-        this.add.text(300,150, "Number of Jumps made: "+gameState.jumps).setFontSize(20);
+        this.add.text(300,50, "Summary",{ fontFamily: 'Arial', size: 100, color: '#1940ff' }).setFontSize(90);
+        this.add.text(310,150, "Number of Jumps made: "+gameState.jumps, { fontFamily: 'Arial', size: 20, color: '#fff' });
         this.input.on('pointerdown', () => {
             this.cameras.main.fade(1000, 0,0,0);
             this.time.delayedCall(1000, () => this.scene.start('example'));
