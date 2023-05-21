@@ -1,7 +1,7 @@
 class Example extends Phaser.Scene
 {
     constructor() {
-        super('Example')
+        super('example')
     }
     movingPlatform;
     cursors;
@@ -25,7 +25,7 @@ class Example extends Phaser.Scene
     create ()
     {
         gameState.active=true;
-        alert('creating');
+        //alert('creating');
 
 
         //let jumpButton = this.game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
@@ -33,12 +33,13 @@ class Example extends Phaser.Scene
 
         gameState.cursors = this.input.keyboard.createCursorKeys();
 
-        alert('setting cursor object');
+        //alert('setting cursor object');
 
 
-      //  this.jumpText = this.add.text(400, 100, 'Jumps Used: 0', {fontsize: '12px', fill: '#000'});
+        
 
         this.add.image(400, 300, 'sky');
+        this.jumpText = this.add.text(650, 50, 'Jumps Used: '+gameState.jumps, {fontsize: '12px', fill: '#000'});
 
         this.platforms = this.physics.add.staticGroup();
 
@@ -119,7 +120,7 @@ class Example extends Phaser.Scene
             this.cameras.main.fade(1000, 0,0,0);
             this.time.delayedCall(1000, () => this.scene.start('outro'));
         });
-        alert('exiting create');
+        //alert('exiting create');
     }
 
 
@@ -153,10 +154,14 @@ class Example extends Phaser.Scene
             this.player.setVelocityY(-330);
         }*/
 
-            //alert('getting to space jump');
+        // This is the code during update() that detects if our little friend jumps and then increments the jump counter
+
         if (Phaser.Input.Keyboard.JustDown(gameState.cursors.space) && this.player.body.touching.down) {
             //gameState.player.anims.play('jump', true);
-            this.player.setVelocityY(-500);
+            this.player.setVelocityY(-330);
+            gameState.jumps +=1;
+            this.jumpText.setText('Jumps Used: ' + gameState.jumps);
+            //alert(gameState.jumps);
           }
     
           if (!this.player.body.touching.down){
@@ -213,7 +218,7 @@ class Outro extends Phaser.Scene {
         var campfire = this.add.image(910, 640, 'campfire');
         campfire.setScale(500/campfire.height,500/campfire.width);
         this.add.text(300,50, "Summary").setFontSize(100);
-        this.add.text((300,150, "Number of Jumps made: ").setFontSize(20), jumps);
+        this.add.text(300,150, "Number of Jumps made: "+gameState.jumps).setFontSize(20);
         this.input.on('pointerdown', () => {
             this.cameras.main.fade(1000, 0,0,0);
             this.time.delayedCall(1000, () => this.scene.start('example'));
@@ -224,6 +229,7 @@ class Outro extends Phaser.Scene {
 const gameState = {
     speed: 240,
     ups: 380,
+    jumps: 0
   };
   
 const config = {
