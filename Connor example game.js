@@ -1,7 +1,8 @@
 class Example extends Phaser.Scene
 {
-    constructor() {
-        super('example')
+    constructor(key) {
+        //alert(key);
+        super('example');
     }
     movingPlatform;
     cursors;
@@ -19,12 +20,15 @@ class Example extends Phaser.Scene
         this.load.image('ground', 'platform.png');
         this.load.image('star', 'star.png');
         this.load.spritesheet('dude', 'dude.png', { frameWidth: 32, frameHeight: 48 });
+        this.load.image('bg3','snowdunes.png')
     }
 
 
     create ()
     {
         gameState.active=true;
+        gameState.min=0;
+        gameState.sec=0;
         //alert('creating');
 
 
@@ -38,8 +42,38 @@ class Example extends Phaser.Scene
 
         
 
-        this.add.image(400, 300, 'sky');
+        gameState.sky=this.add.image(0, 0, 'sky');
+        this.elasped_time=this.add.text(650,25,'Time: '+gameState.min+':'+gameState.sec, {fontsize: '12px', fill: '#000'});
         this.jumpText = this.add.text(650, 50, 'Jumps Used: '+gameState.jumps, {fontsize: '12px', fill: '#000'});
+        gameState.bg3 = this.add.image(0, 0, 'bg3');
+
+        gameState.sky.setOrigin(0, 0);
+        //gameState.bg2.setOrigin(0, 0);
+        gameState.bg3.setOrigin(0, 0);
+
+        // Parallax Backgrounds setup
+        alert('1');
+        const game_width = parseFloat(gameState.bg3.getBounds().width)
+        gameState.width = game_width;
+        const window_width = config.width
+
+        const sky_width = gameState.sky.getBounds().width
+        //const bg2_width = gameState.bg2.getBounds().width
+        const bg3_width = gameState.bg3.getBounds().width
+        //alert("bg1: "+bg1_width+" bg2: "+bg2_width+" bg3:"+bg3_width);
+
+
+        //gameState.bgColor.setScrollFactor(0);
+        gameState.sky.setScrollFactor((sky_width - window_width) / (game_width - window_width));
+        //gameState.bg2.setScrollFactor((bg2_width - window_width) / (game_width - window_width));
+        alert('setting scroll info');
+
+
+        this.events.add(10000, function () {
+ 
+            alert('five secs passed');
+ 
+        });
 
         this.platforms = this.physics.add.staticGroup();
 
@@ -68,6 +102,11 @@ class Example extends Phaser.Scene
         //this.movingPlatformv2.setVelocityX(50);
 
         this.player = this.physics.add.sprite(100, 450, 'dude');
+
+        this.cameras.main.setBounds(0, 0, gameState.bg3.width, gameState.bg3.height);
+        this.physics.world.setBounds(0, 0, gameState.width, gameState.bg3.height + this.player.height);
+
+        this.cameras.main.startFollow(this.player, true, 0.5, 0.5)
 
         this.player.setBounce(0.2);
         this.player.setCollideWorldBounds(true);
@@ -212,11 +251,13 @@ class Outro extends Phaser.Scene {
     preload(){
         this.load.path = './assets/';
         this.load.image('campfire','campfire.gif')
+        this.load.image('campfire2','campfire.png')
+        //gameState.campfire=this.load.spritesheet('campfire2','campfire.png');
        
     }
     create() {
-        var campfire = this.add.image(910, 640, 'campfire');
-        campfire.setScale(500/campfire.height,500/campfire.width);
+        var campfire = this.add.image(500, 500, 'campfire2');
+        campfire.setScale(50/campfire.height,50/campfire.width);
         this.add.text(300,50, "Summary",{ fontFamily: 'Arial', size: 100, color: '#1940ff' }).setFontSize(90);
         this.add.text(310,150, "Number of Jumps made: "+gameState.jumps, { fontFamily: 'Arial', size: 20, color: '#fff' });
         this.input.on('pointerdown', () => {
@@ -242,7 +283,7 @@ const config = {
         arcade: {
             gravity: { y: 300 },
             enableBody: true,
-            debug: true
+            //debug: true
         }
     },
     scene: [Example,Outro]
