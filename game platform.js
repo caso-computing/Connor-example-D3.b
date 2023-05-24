@@ -124,7 +124,7 @@ class Level extends Phaser.Scene {
     const bg1_width = gameState.bg1.getBounds().width
     const bg2_width = gameState.bg2.getBounds().width
     const bg3_width = gameState.bg3.getBounds().width
-    alert({bg1_width, bg2_width,bg3_width});
+    //alert({bg1_width, bg2_width,bg3_width});
 
     gameState.bgColor .setScrollFactor(0);
     gameState.bg1.setScrollFactor((bg1_width - window_width) / (game_width - window_width));
