@@ -21,8 +21,9 @@ class Example extends Phaser.Scene
         this.load.image('star', 'star.png');
         this.load.spritesheet('dude', 'dude.png', { frameWidth: 32, frameHeight: 48 });
         this.load.image('bg3','snowdunes.png')
-    }
+        this.load.spritesheet('campfire2','campfire.png',{ frameWidth: 32, frameHeight: 32});       
 
+    }
 
     create ()
     {
@@ -37,14 +38,12 @@ class Example extends Phaser.Scene
 
         gameState.cursors = this.input.keyboard.createCursorKeys();
 
-        //alert('setting cursor object');
-
-
         
 
         gameState.sky=this.add.image(0, 0, 'sky');
         this.elasped_time=this.add.text(650,25,'Time: '+gameState.min+':'+gameState.sec, {fontsize: '12px', fill: '#000'});
         this.jumpText = this.add.text(650, 50, 'Jumps Used: '+gameState.jumps, {fontsize: '12px', fill: '#000'});
+        this.starCollected = this.add.text(650,75,'Captured: '+gameState.stars, {fontsize: '12px', fill: '#000'});
         gameState.bg3 = this.add.image(0, 0, 'bg3');
 
         gameState.sky.setOrigin(0, 0);
@@ -52,7 +51,7 @@ class Example extends Phaser.Scene
         gameState.bg3.setOrigin(0, 0);
 
         // Parallax Backgrounds setup
-        alert('1');
+    
         const game_width = parseFloat(gameState.bg3.getBounds().width)
         gameState.width = game_width;
         const window_width = config.width
@@ -65,16 +64,30 @@ class Example extends Phaser.Scene
 
         //gameState.bgColor.setScrollFactor(0);
         gameState.sky.setScrollFactor((sky_width - window_width) / (game_width - window_width));
-        //gameState.bg2.setScrollFactor((bg2_width - window_width) / (game_width - window_width));
-        alert('setting scroll info');
+        
+        // set up timer tween for this level
+        let startingTime = 0;
+        let endTime =59;
 
-
-        this.events.add(10000, function () {
- 
-            alert('five secs passed');
- 
+        let updateTween = this.tweens.addCounter({
+            from: startingTime,
+            to: endTime,
+            duration: 60100,        // each counter last for 10 secs
+            ease: 'linear',
+            repeat: -1,
+            onRepeat: () =>
+            {
+                this.elasped_time.setText(`Time: ${gameState.min}:00`);
+                gameState.min += 1;
+            },
+            onUpdate: tween =>
+            {
+                const value = Math.round(tween.getValue());
+                this.elasped_time.setText(`Time: ${gameState.min}:${value}`)
+            }
         });
-
+        gameState.lava = this.add.sprite(1100,580,'campfire2');
+        gameState.lava.setScale(1500/gameState.lava.height,100/gameState.lava.width);
         this.platforms = this.physics.add.staticGroup();
 
         this.platforms.create(400, 568, 'ground').setScale(2).refreshBody();
@@ -96,6 +109,7 @@ class Example extends Phaser.Scene
 
         this.movingPlatformv2.setImmovable(true);
         this.movingPlatformv2.body.allowGravity = false;
+        this.movingPlatformv2.setVelocityX(100);
 
         this.movingPlatformv3.setImmovable(true);
         this.movingPlatformv3.body.allowGravity = false;
@@ -107,6 +121,7 @@ class Example extends Phaser.Scene
         this.physics.world.setBounds(0, 0, gameState.width, gameState.bg3.height + this.player.height);
 
         this.cameras.main.startFollow(this.player, true, 0.5, 0.5)
+        //this.cameras.main.x
 
         this.player.setBounce(0.2);
         this.player.setCollideWorldBounds(true);
@@ -135,7 +150,7 @@ class Example extends Phaser.Scene
 
         this.stars = this.physics.add.group({
             key: 'star',
-            repeat: 11,
+            repeat: 15,
             setXY: { x: 12, y: 0, stepX: 70 }
         });
 
@@ -200,7 +215,6 @@ class Example extends Phaser.Scene
             this.player.setVelocityY(-330);
             gameState.jumps +=1;
             this.jumpText.setText('Jumps Used: ' + gameState.jumps);
-            //alert(gameState.jumps);
           }
     
           if (!this.player.body.touching.down){
@@ -216,14 +230,30 @@ class Example extends Phaser.Scene
             this.movingPlatform.setVelocityX(50);
         }
 
-        if (this.movingPlatformv2.x >= 500)
+        if (this.movingPlatformv2.x >= 1500)
         {
-            this.movingPlatformv2.setVelocityX(-50);
+            this.movingPlatformv2.setVelocityX(-100);
         }
-        else if (this.movingPlatformv2.x <= 300)
+        else if (this.movingPlatformv2.x <= 50)
         {
-            this.movingPlatformv2.setVelocityX(50);
+            this.movingPlatformv2.setVelocityX(100);
         }
+        if (this.player.body.x>650){
+            this.elasped_time.x=this.player.body.x;
+            this.jumpText.x=this.player.body.x;
+            this.starCollected.x=this.player.body.x;
+        }
+        //this.elasped_time.x=this.player.body.x;
+
+        // Check to see if player has fallen into the lava.
+        // if so, restart level
+        if (this.player.y > gameState.bg3.height) {
+            this.cameras.main.shake(240, .01, false, function(camera, progress) {
+              if (progress > .9) {
+                this.scene.restart(this.example);
+              }
+            });
+          }
     }
 
     jump() {
@@ -239,6 +269,8 @@ class Example extends Phaser.Scene
     collectStar (player, star)
     {
         star.disableBody(true, true);
+        this.starCollected.setText('Captured: '+gameState.stars)
+        gameState.stars +=1;
     }
 
 
@@ -251,26 +283,38 @@ class Outro extends Phaser.Scene {
     preload(){
         this.load.path = './assets/';
         this.load.image('campfire','campfire.gif')
-        this.load.image('campfire2','campfire.png')
-        //gameState.campfire=this.load.spritesheet('campfire2','campfire.png');
-       
+        //this.load.image('campfire2','campfire.png')
+        this.load.spritesheet('campfire2','campfire.png',{ frameWidth: 32, frameHeight: 32});       
     }
     create() {
-        var campfire = this.add.image(500, 500, 'campfire2');
-        campfire.setScale(50/campfire.height,50/campfire.width);
+        gameState.campfire = this.add.sprite(500, 500, 'campfire2');
+        gameState.campfire.setScale(300/gameState.campfire.height,150/gameState.campfire.width);
         this.add.text(300,50, "Summary",{ fontFamily: 'Arial', size: 100, color: '#1940ff' }).setFontSize(90);
         this.add.text(310,150, "Number of Jumps made: "+gameState.jumps, { fontFamily: 'Arial', size: 20, color: '#fff' });
+        
+        this.anims.create({
+            key: 'fire',
+            frames: this.anims.generateFrameNumbers('campfire2'),
+            frameRate: 5,
+            repeat: -1
+        });
+
         this.input.on('pointerdown', () => {
             this.cameras.main.fade(1000, 0,0,0);
             this.time.delayedCall(1000, () => this.scene.start('example'));
         });
+    }
+    update(){
+        gameState.campfire.anims.play('fire', true);
+
     }
 }
 
 const gameState = {
     speed: 240,
     ups: 380,
-    jumps: 0
+    jumps: 0,
+    stars: 0
   };
   
 const config = {
