@@ -22,7 +22,8 @@ class Example extends Phaser.Scene
         this.load.spritesheet('dude', 'dude.png', { frameWidth: 32, frameHeight: 48 });
         this.load.image('bg3','snowdunes.png')
         this.load.spritesheet('campfire2','campfire.png',{ frameWidth: 32, frameHeight: 32});       
-
+        this.load.audio('mars', 'Mars, the Bringer of War.ogg')
+        this.load.image('bg2', 'trees.png');
     }
 
     create ()
@@ -30,6 +31,9 @@ class Example extends Phaser.Scene
         gameState.active=true;
         gameState.min=0;
         gameState.sec=0;
+        gameState.jumps=0;
+        gameState.stars=0;
+        const offSet= 650;
         //alert('creating');
 
 
@@ -38,17 +42,28 @@ class Example extends Phaser.Scene
 
         gameState.cursors = this.input.keyboard.createCursorKeys();
 
+        const music = this.sound.add('mars');
+        //music.stop();
+        music.play({
+            seek:5
+        });
         
 
+        
+        
         gameState.sky=this.add.image(0, 0, 'sky');
+        gameState.gb2 = this.add.image(0,0,'bg2').setOrigin(0,0);
+        gameState.bg3 = this.add.image(0, 0, 'bg3');
+        
+
+        gameState.sky.setOrigin(0, 0);
+        //gameState.bg2.setOrigin(0, 300);
+        gameState.bg3.setOrigin(0, 0);
+
         this.elasped_time=this.add.text(650,25,'Time: '+gameState.min+':'+gameState.sec, {fontsize: '12px', fill: '#000'});
         this.jumpText = this.add.text(650, 50, 'Jumps Used: '+gameState.jumps, {fontsize: '12px', fill: '#000'});
         this.starCollected = this.add.text(650,75,'Captured: '+gameState.stars, {fontsize: '12px', fill: '#000'});
-        gameState.bg3 = this.add.image(0, 0, 'bg3');
-
-        gameState.sky.setOrigin(0, 0);
-        //gameState.bg2.setOrigin(0, 0);
-        gameState.bg3.setOrigin(0, 0);
+        
 
         // Parallax Backgrounds setup
     
@@ -238,6 +253,7 @@ class Example extends Phaser.Scene
         {
             this.movingPlatformv2.setVelocityX(100);
         }
+        
         if (this.player.body.x>650){
             this.elasped_time.x=this.player.body.x;
             this.jumpText.x=this.player.body.x;
