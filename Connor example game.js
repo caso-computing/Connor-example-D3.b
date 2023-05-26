@@ -120,15 +120,8 @@ class Level extends Phaser.Scene
         
         this.platforms = this.physics.add.staticGroup();
 
-        //alert('before weather')
-        //this.setWeather(this.weather);
+        //  Set up the static platforms
         this.levelSetup();
-
-        //this.platforms.create(400, 568, 'ground').setScale(2).refreshBody();
-
-        // platforms.create(600, 400, 'ground');
-        // platforms.create(50, 250, 'ground');
-        // platforms.create(750, 220, 'ground');
 
         this.movingPlatform = this.physics.add.image(600, 400, 'ground');
         this.movingPlatform.setScale(200/this.movingPlatform.width,30/this.movingPlatform.height);
@@ -391,10 +384,17 @@ setWeather(weather) {
 
 
 
-class Level1 extends Level {
+
+
+
+
+
+
+
+ class Level1 extends Level {
     constructor() {
       super('Level1')
-      this.heights = [8, 7, 5, null, 5, 3, null, 3, 3];
+      this.heights = [8.2, 7, 5, null, 5, 3, null, 3, 3];
       this.weather = 'afternoon';
     }
   }
@@ -447,6 +447,20 @@ class Outro extends Phaser.Scene {
             frameRate: 5,
             repeat: -1
         });
+
+        if(gameState.nextLevel == 'Level1')
+        {
+            this.add.text(300,375,"The next level will require some higher jumping", { fontFamily: 'Arial', size: 20, color: '#fff' });
+
+        }
+        else if(gameState.nextLevel == 'Level2')
+        {
+            this.add.text(300,375,"Be mindful of the gaps on this next level",{ fontFamily: 'Arial', size: 20, color: '#fff' });
+        }
+        else if(gameState.nextLevel == 'Level3')
+        {
+            this.add.text(300,375,"nice job on making it to the end!", { fontFamily: 'Arial', size: 20, color: '#fff' });
+        }
 
         this.input.on('pointerdown', () => {
             this.cameras.main.fade(1000, 0,0,0);
