@@ -91,6 +91,12 @@ class Level extends Phaser.Scene
         gameState.sky.setScrollFactor((sky_width - window_width) / (game_width - window_width));
         gameState.bg2.setScrollFactor((bg2_width - window_width) / (game_width - window_width));
 
+        // Make sure the score board does not move with the width of the game
+        this.elasped_time.setScrollFactor((sky_width - window_width) / (game_width - window_width));
+        this.jumpText.setScrollFactor((sky_width - window_width) / (game_width - window_width));
+        this.starCollected.setScrollFactor((sky_width - window_width) / (game_width - window_width));
+
+
         // set up timer tween for this level
         let startingTime = 0;
         let endTime =59;
@@ -285,13 +291,6 @@ class Level extends Phaser.Scene
         {
             this.movingPlatformv2.setVelocityX(100);
         }
-        
-        if (this.player.body.x>400){
-            this.elasped_time.x=this.player.body.x;
-            this.jumpText.x=this.player.body.x;
-            this.starCollected.x=this.player.body.x;
-        }
-        //this.elasped_time.x=this.player.body.x;
 
         // Check to see if player has fallen into the lava.
         // if so, restart level
