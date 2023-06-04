@@ -1,3 +1,75 @@
+// These next two classes were copied from the phaser 3 examples 
+// They modify both and Image object and the Group classes in phaser
+// to make it easier to shoot bullets at other objects.
+
+// Must run in phaser version 3.60 or later.  Does not work in 
+// phaser v3.15.  The Bullets call on create doesn't work in phaser
+// v3.15.
+
+class Bullet extends Phaser.Physics.Arcade.Image
+{
+    fire (x, y, vx, vy)
+    {
+        console.log('fire from singular Bullet')
+        this.enableBody(true, x, y, true, true);
+        this.setVelocity(vx, vy);
+    }
+
+    onCreate ()
+    {
+        console.log('onCreate from Bullet')
+        //alert('in on Create in Bullet')
+        this.disableBody(true, true);
+        this.body.collideWorldBounds = true;
+        this.body.onWorldBounds = true;
+    }
+
+    onWorldBounds ()
+    {
+        console.log('on world bounds')
+        this.disableBody(true, true);
+    }
+}
+
+class Bullets extends Phaser.Physics.Arcade.Group
+{
+    constructor (world, scene, config)
+    {
+        console.log(world, scene,config);
+        //alert('just before super')        
+        super(
+            world,
+            scene,
+            { ...config, classType: Bullet, createCallback: Bullets.prototype.onCreate }
+        );
+    }
+
+    fire (x, y, vx, vy)
+    {
+        
+        const bullet = this.getFirstDead(false);
+        //alert('fire from Bullets')
+        //console.log(bullet,this);
+        if (bullet)
+        {
+            //alert('found first dead')
+            bullet.fire(x, y, vx, vy);
+        }
+    }
+
+    onCreate (bullet)
+    {
+        //alert('on create in Bullets')
+        bullet.onCreate();
+    }
+
+    poolInfo ()
+    {
+        return `${this.name} total=${this.getLength()} active=${this.countActive(true)} inactive=${this.countActive(false)}`;
+    }
+}
+//  End of Image and Group class extensions
+
 class Level extends Phaser.Scene
 {
     constructor(key) {
@@ -29,9 +101,11 @@ class Level extends Phaser.Scene
         this.load.image('star', 'star.png');
         this.load.spritesheet('dude', 'dude.png', { frameWidth: 32, frameHeight: 48 });
         this.load.image('bg3','snowdunes.png')
-        this.load.spritesheet('campfire2','campfire.png',{ frameWidth: 32, frameHeight: 32});       
+        this.load.spritesheet('campfire2','campfire.png',{ frameWidth: 32, frameHeight: 32}); 
+        this.load.spritesheet('enemy','campfire.png',{ frameWidth: 32, frameHeight: 32});      
         this.load.audio('mars', 'Mars, the Bringer of War.ogg')
         this.load.image('bg2', 'trees.png');
+        this.load.image('enemyBullet', 'snowflake.png');
     }
 
     create ()
@@ -60,6 +134,7 @@ class Level extends Phaser.Scene
         
 
         
+
         
         gameState.sky=this.add.image(0, 0, 'sky');
         gameState.bg2 = this.add.image(0,0,'bg2').setOrigin(0,0);
@@ -126,6 +201,8 @@ class Level extends Phaser.Scene
         
         this.platforms = this.physics.add.staticGroup();
 
+        
+
         //  Set up the static platforms
         this.levelSetup();
 
@@ -149,6 +226,57 @@ class Level extends Phaser.Scene
         //this.movingPlatformv2.setVelocityX(50);
 
         this.player = this.physics.add.sprite(100, 450, 'dude');
+
+        this.enemy = this.physics.add.sprite(256, 128, 'enemy');
+        this.enemy.body.allowGravity=false;
+        this.enemy.setCollideWorldBounds(true);
+        /*
+        this.enemy.setBodySize(160, 64);
+        //this.movingPlatform.body.allowGravity = false;
+        this.enemy.body.allowGravity=false;
+*/
+        
+
+// Create the troll head bullets/bombs
+        gameState.enemyBullets = this.add.existing(
+            new Bullets(this.physics.world, this, { name: 'enemyBullets' })
+        );
+        //alert('creating multiple bullets, 5')
+        console.log('type of bullet: ',gameState.enemyBullets)
+        gameState.enemyBullets.createMultiple({
+            key: 'enemyBullet',
+            quantity: 20
+        });
+        // Hit points
+        this.enemy.state = 5;
+        //this.enemy.body.velocity=20;
+
+        this.enemyMoving = this.tweens.add({
+            targets: this.enemy.body.velocity,
+            targets: this.enemy,
+            //x: 700,
+        
+            props: {
+                x: { from: 250, to: 2000, duration: 15000 },
+                y: { from: 270, to: 20, duration: 2000 }
+            },
+            
+            duration: 10000,
+            ease: 'Sine.easeInOut',
+            yoyo: true,
+            repeat: -1
+        });
+
+        this.enemyFiring = this.time.addEvent({
+            delay:2000,
+            startAt: 10,
+            loop: true,
+            callback: () =>
+            {
+                gameState.enemyBullets.fire(this.enemy.x, this.enemy.y+100, 0, 150);
+            }
+        })
+        
 
         
 
@@ -187,13 +315,13 @@ class Level extends Phaser.Scene
         this.physics.add.image().setAngle()
         this.stars = this.physics.add.group({
             key: 'star',
-            repeat: 15,
+            repeat: 120,
             setXY: { x: 12, y: 0, stepX: 70 }
         });
 
         for (const star of this.stars.getChildren())
         {
-            star.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8));
+            star.setBounceY(Phaser.Math.FloatBetween(0.3, 0.5));
         }
 
         this.physics.add.collider(this.player, this.platforms);
@@ -206,6 +334,33 @@ class Level extends Phaser.Scene
         this.physics.add.collider(this.stars, this.movingPlatformv3);
 
         this.physics.add.overlap(this.player, this.stars, this.collectStar, null, this);
+
+        // This kills the player.
+        this.physics.add.overlap(this.player, gameState.enemyBullets, (player, bullet) =>
+        {
+            const { x, y } = bullet.body.center;
+
+            bullet.disableBody(true, true);
+            //this.player.disableBody(true,true);
+            this.tweens.add({
+                targets: this.player,
+                props: {
+                    x: { from: this.player.x -10, to: this.player.x+10, duration: 80 },
+                   // y: { from: 270, to: 20, duration: 2000 }
+                },
+                duratation: 400,
+                repeat: -1,
+                yoyo: true
+
+            })
+            this.cameras.main.fade(5000, 0xff,0xff,0xff);
+            this.time.delayedCall(6000, () => this.scene.start('Outro'));
+            //this.plasma.setSpeedY(0.2 * bullet.body.velocity.y).emitParticleAt(x, y);
+        });
+        this.physics.world.on('worldbounds', (body) =>
+        {
+            body.gameObject.onWorldBounds()
+        });
 
         this.input.on('pointerdown', () => {
             this.cameras.main.fade(1000, 0,0,0);
@@ -484,13 +639,14 @@ const config = {
     type: Phaser.AUTO,
     width: 800,
     height: 600,
+    pixelArt: true,
     parent: 'phaser-example',
     physics: {
         default: 'arcade',
         arcade: {
             gravity: { y: 300 },
             enableBody: true,
-            //debug: true
+            debug: true
         }
     },
     scene: [Level1, Level2, Level3, Outro]
