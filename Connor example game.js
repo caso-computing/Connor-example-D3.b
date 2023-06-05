@@ -230,11 +230,11 @@ class Level extends Phaser.Scene
         this.enemy = this.physics.add.sprite(256, 128, 'enemy');
         this.enemy.body.allowGravity=false;
         this.enemy.setCollideWorldBounds(true);
-        /*
-        this.enemy.setBodySize(160, 64);
-        //this.movingPlatform.body.allowGravity = false;
-        this.enemy.body.allowGravity=false;
-*/
+        this.enemy.setScale(2);
+
+        this.enemy.setBodySize(100, 64);
+
+
         
 
 // Create the troll head bullets/bombs
@@ -257,7 +257,7 @@ class Level extends Phaser.Scene
             //x: 700,
         
             props: {
-                x: { from: 250, to: 2000, duration: 15000 },
+                x: { from: 100, to: 700, duration: 5000 },
                 y: { from: 270, to: 20, duration: 2000 }
             },
             
@@ -273,7 +273,7 @@ class Level extends Phaser.Scene
             loop: true,
             callback: () =>
             {
-                gameState.enemyBullets.fire(this.enemy.x, this.enemy.y+100, 0, 150);
+                gameState.enemyBullets.fire(this.enemy.x, this.enemy.y+50, this.enemy.angle*5, 10);
             }
         })
         
@@ -346,7 +346,7 @@ class Level extends Phaser.Scene
                 targets: this.player,
                 props: {
                     x: { from: this.player.x -10, to: this.player.x+10, duration: 80 },
-                   // y: { from: 270, to: 20, duration: 2000 }
+                    y: { from: this.player.y -5, to: this.player.y+5, duration: 80 }
                 },
                 duratation: 400,
                 repeat: -1,
@@ -379,9 +379,9 @@ class Level extends Phaser.Scene
     createPlatform(xIndex, yIndex) {
         // Creates a platform evenly spaced along the two indices.
         // If either is not a number it won't make a platform
-        //alert('in platform create. xIndex:'+xIndex+' yIndex: '+yIndex)
           if (typeof yIndex === 'number' && typeof xIndex === 'number') {
-            this.platforms.create((220 * xIndex),  yIndex * 70, 'ground').setOrigin(0, 0.5).refreshBody();
+            this.platforms.create((200 * xIndex),  yIndex * 70, 'ground').setOrigin(0, 0.5).refreshBody()
+            .setScale(.5,1).setBodySize(200,36);
           }
       }
 
@@ -446,6 +446,13 @@ class Level extends Phaser.Scene
         {
             this.movingPlatformv2.setVelocityX(100);
         }
+
+        if (this.enemy.angle<-45){
+            gameState.enemyRot=Math.abs(gameState.enemyRot);
+        } else if (this.enemy.angle>45){
+            gameState.enemyRot=-Math.abs(gameState.enemyRot);
+        }
+        this.enemy.rotation +=gameState.enemyRot;
 
         // Check to see if player has fallen into the lava.
         // if so, restart level
@@ -548,7 +555,9 @@ setWeather(weather) {
  class Level1 extends Level {
     constructor() {
       super('Level1')
-      this.heights = [8.2, 7, 5, null, 5, 3, null, 3, 3];
+      //this.heights = [8.2, 7, 5, null, 5, 3, null, 3, 3];
+      this.heights = [8.2, 7.6, 6.5, 7.5, 6.5, 7.5, 6.0, 7.5, 8.2, 6.0];
+
       this.weather = 'afternoon';
     }
   }
@@ -632,6 +641,7 @@ const gameState = {
     ups: 380,
     jumps: 0,
     stars: 0,
+    enemyRot: .01,      //rotation amount of enemy shooter
     nextLevel: 'Level4'
   };
   
