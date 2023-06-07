@@ -3,22 +3,19 @@
 // to make it easier to shoot bullets at other objects.
 
 // Must run in phaser version 3.60 or later.  Does not work in 
-// phaser v3.15.  The Bullets call on create doesn't work in phaser
+// phaser v3.15.  The Bullets call onCreate doesn't work in phaser
 // v3.15.
 
 class Bullet extends Phaser.Physics.Arcade.Image
 {
     fire (x, y, vx, vy)
     {
-        console.log('fire from singular Bullet')
         this.enableBody(true, x, y, true, true);
         this.setVelocity(vx, vy);
     }
 
     onCreate ()
     {
-        console.log('onCreate from Bullet')
-        //alert('in on Create in Bullet')
         this.disableBody(true, true);
         this.body.collideWorldBounds = true;
         this.body.onWorldBounds = true;
@@ -26,7 +23,6 @@ class Bullet extends Phaser.Physics.Arcade.Image
 
     onWorldBounds ()
     {
-        console.log('on world bounds')
         this.disableBody(true, true);
     }
 }
@@ -35,8 +31,6 @@ class Bullets extends Phaser.Physics.Arcade.Group
 {
     constructor (world, scene, config)
     {
-        console.log(world, scene,config);
-        //alert('just before super')        
         super(
             world,
             scene,
@@ -48,18 +42,14 @@ class Bullets extends Phaser.Physics.Arcade.Group
     {
         
         const bullet = this.getFirstDead(false);
-        //alert('fire from Bullets')
-        //console.log(bullet,this);
         if (bullet)
         {
-            //alert('found first dead')
             bullet.fire(x, y, vx, vy);
         }
     }
 
     onCreate (bullet)
     {
-        //alert('on create in Bullets')
         bullet.onCreate();
     }
 
@@ -74,7 +64,6 @@ class Level extends Phaser.Scene
 {
     constructor(key) {
         super(key);
-        //alert(key);
 
         this.levelKey = key
         this.nextLevel = {
@@ -94,7 +83,6 @@ class Level extends Phaser.Scene
 
     preload ()
     {
-        //alert('preloading');
         this.load.path = './assets/';
         this.load.image('sky', 'sky.png');
         this.load.image('ground', 'platform.png');
@@ -118,23 +106,17 @@ class Level extends Phaser.Scene
         gameState.nextLevel=this.nextLevel[this.levelKey];
         gameState.levelKey=this.levelKey;
         const offSet= 650;
-        //alert('creating');
-
-
-        //let jumpButton = this.game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
-        //jumpButton.onDown.add(jump, this);
 
         gameState.cursors = this.input.keyboard.createCursorKeys();
 
-        const music = this.sound.add('mars');
+        // set up some "soothing" game background music from Holst
+
+        gameState.bgMusic = this.sound.add('mars');
+        const music = gameState.bgMusic;
         music.stop();
         music.play({
             seek:5
         });
-        
-
-        
-
         
         gameState.sky=this.add.image(0, 0, 'sky');
         gameState.bg2 = this.add.image(0,0,'bg2').setOrigin(0,0);
@@ -159,14 +141,12 @@ class Level extends Phaser.Scene
         const sky_width = gameState.sky.getBounds().width
         const bg2_width = gameState.bg2.getBounds().width
         const bg3_width = gameState.bg3.getBounds().width
-        //alert("bg1: "+bg1_width+" bg2: "+bg2_width+" bg3:"+bg3_width);
-
 
         //gameState.bgColor.setScrollFactor(0);
         gameState.sky.setScrollFactor((sky_width - window_width) / (game_width - window_width));
         gameState.bg2.setScrollFactor((bg2_width - window_width) / (game_width - window_width));
 
-        // Make sure the score board does not move with the width of the game
+        // Make sure the score board stays in the same spot during game movement 
         this.elasped_time.setScrollFactor((sky_width - window_width) / (game_width - window_width));
         this.jumpText.setScrollFactor((sky_width - window_width) / (game_width - window_width));
         this.starCollected.setScrollFactor((sky_width - window_width) / (game_width - window_width));
@@ -199,11 +179,8 @@ class Level extends Phaser.Scene
         gameState.lava = this.add.sprite(1100,580,'campfire2');
         gameState.lava.setScale(1500/gameState.lava.height,100/gameState.lava.width);
         
-        this.platforms = this.physics.add.staticGroup();
-
-        
-
         //  Set up the static platforms
+        this.platforms = this.physics.add.staticGroup();
         this.levelSetup();
 
         this.movingPlatform = this.physics.add.image(600, 400, 'ground');
@@ -215,7 +192,7 @@ class Level extends Phaser.Scene
 
         this.movingPlatform.setImmovable(true);
         this.movingPlatform.body.allowGravity = false;
-        //this.movingPlatform.setVelocityX(50);
+        this.movingPlatform.setVelocityX(50);
 
         this.movingPlatformv2.setImmovable(true);
         this.movingPlatformv2.body.allowGravity = false;
@@ -231,8 +208,7 @@ class Level extends Phaser.Scene
         this.enemy.body.allowGravity=false;
         this.enemy.setCollideWorldBounds(true);
         this.enemy.setScale(2);
-
-        this.enemy.setBodySize(100, 64);
+        this.enemy.setBodySize(100, 50);
 
 
         
@@ -241,27 +217,40 @@ class Level extends Phaser.Scene
         gameState.enemyBullets = this.add.existing(
             new Bullets(this.physics.world, this, { name: 'enemyBullets' })
         );
-        //alert('creating multiple bullets, 5')
-        console.log('type of bullet: ',gameState.enemyBullets)
         gameState.enemyBullets.createMultiple({
             key: 'enemyBullet',
-            quantity: 20
+            quantity: 1
         });
+
+        gameState.enemyBullets2 = this.add.existing(
+            new Bullets(this.physics.world, this, { name: 'enemyBullets' })
+        );
+        gameState.enemyBullets2.createMultiple({
+            key: 'enemyBullet',
+            quantity: 5
+        })
+        gameState.enemyBullets3 = this.add.existing(
+            new Bullets(this.physics.world, this, { name: 'enemyBullets' })
+        );
+        gameState.enemyBullets3.createMultiple({
+            key: 'enemyBullet',
+            quantity: 5
+        })
+
         // Hit points
         this.enemy.state = 5;
-        //this.enemy.body.velocity=20;
 
         this.enemyMoving = this.tweens.add({
-            targets: this.enemy.body.velocity,
+            //targets: this.enemy.body.velocity,
             targets: this.enemy,
             //x: 700,
         
             props: {
-                x: { from: 100, to: 700, duration: 5000 },
-                y: { from: 270, to: 20, duration: 2000 }
+                x: { from: 100, to: 700, duration: 6000 },
+                y: { from: 200, to: 20, duration: 2000 }
             },
             
-            duration: 10000,
+            duration: 12000,
             ease: 'Sine.easeInOut',
             yoyo: true,
             repeat: -1
@@ -269,23 +258,27 @@ class Level extends Phaser.Scene
 
         this.enemyFiring = this.time.addEvent({
             delay:2000,
-            startAt: 10,
+            startAt: 100,
             loop: true,
             callback: () =>
             {
-                gameState.enemyBullets.fire(this.enemy.x, this.enemy.y+50, this.enemy.angle*5, 10);
+                if(this.levelKey==='Level1'){
+                    gameState.enemyBullets.fire(this.enemy.x, this.enemy.y+50, 0, -10);
+                }else if(this.levelKey==='Level2'){
+                    gameState.enemyBullets2.fire(this.enemy.x+20, this.enemy.y+50, this.enemy.angle*5, -100);
+                    gameState.enemyBullets3.fire(this.enemy.x-20, this.enemy.y+50, -this.enemy.angle*5, -150);
+                }else if (this.levelKey==='Level3'){
+                    gameState.enemyBullets.fire(this.enemy.x, this.enemy.y+50, 0, -10);
+                    gameState.enemyBullets2.fire(this.enemy.x+20, this.enemy.y+50, this.enemy.angle*5, -100);
+                    gameState.enemyBullets3.fire(this.enemy.x-20, this.enemy.y+50, -this.enemy.angle*5, -150);
+                }
             }
         })
-        
-
-        
-
 
         this.cameras.main.setBounds(0, 0, gameState.bg3.width, gameState.bg3.height);
         this.physics.world.setBounds(0, 0, gameState.width, gameState.bg3.height + this.player.height);
 
         this.cameras.main.startFollow(this.player, true, 0.5, 0.5)
-        //this.cameras.main.x
 
         this.player.setBounce(0.2);
         this.player.setCollideWorldBounds(true);
@@ -336,7 +329,8 @@ class Level extends Phaser.Scene
         this.physics.add.overlap(this.player, this.stars, this.collectStar, null, this);
 
         // This kills the player.
-        this.physics.add.overlap(this.player, gameState.enemyBullets, (player, bullet) =>
+        this.physics.add.overlap(this.player, [gameState.enemyBullets,gameState.enemyBullets2,
+            gameState.enemyBullets3], (player, bullet) =>
         {
             const { x, y } = bullet.body.center;
 
@@ -353,6 +347,7 @@ class Level extends Phaser.Scene
                 yoyo: true
 
             })
+            music.stop();
             this.cameras.main.fade(5000, 0xff,0xff,0xff);
             this.time.delayedCall(6000, () => this.scene.start('Outro'));
             //this.plasma.setSpeedY(0.2 * bullet.body.velocity.y).emitParticleAt(x, y);
@@ -380,7 +375,7 @@ class Level extends Phaser.Scene
         // Creates a platform evenly spaced along the two indices.
         // If either is not a number it won't make a platform
           if (typeof yIndex === 'number' && typeof xIndex === 'number') {
-            this.platforms.create((200 * xIndex),  yIndex * 70, 'ground').setOrigin(0, 0.5).refreshBody()
+            this.platforms.create((150 * xIndex),  yIndex * 70, 'ground').setOrigin(0, 0.5).refreshBody()
             .setScale(.5,1).setBodySize(200,36);
           }
       }
@@ -429,7 +424,7 @@ class Level extends Phaser.Scene
             //gameState.player.anims.play('jump', true);
           }
 
-        if (this.movingPlatform.x >= 500)
+        if (this.movingPlatform.x >= 800)
         {
             this.movingPlatform.setVelocityX(-50);
         }
@@ -457,11 +452,14 @@ class Level extends Phaser.Scene
         // Check to see if player has fallen into the lava.
         // if so, restart level
         if (this.player.y > gameState.bg3.height) {
+            //music.stop();
             this.cameras.main.shake(240, .01, false, function(camera, progress) {
               if (progress > .9) {
                 //this.scene.restart(this.example);
+                //music.stop();
                 this.scene.stop(this.levelKey);
                 //this.scene.start(this.nextLevel[this.levelKey]);
+                
                 this.scene.start('Outro');
               }
             });
@@ -556,7 +554,7 @@ setWeather(weather) {
     constructor() {
       super('Level1')
       //this.heights = [8.2, 7, 5, null, 5, 3, null, 3, 3];
-      this.heights = [8.2, 7.6, 6.5, 7.5, 6.5, 7.5, 6.0, 7.5, 8.2, 6.0];
+      this.heights = [8.4, null, 8.4, 6.0, 8.4, 6.0, null, 4.0, 8.4, null, 6.0, null, 6.0];
 
       this.weather = 'afternoon';
     }
@@ -567,16 +565,17 @@ setWeather(weather) {
         
       super('Level2')
       //alert('level 2 class, levelKey: '+this.levelKey+' nlk: '+this.nextLevel[this.levelKey])
-      this.heights = [8, 4, null, 4, 6, 4, 6, 5, 5];
+      //this.heights = [8, 4, null, 4, 6, 4, 6, 5, 5];
+      this.heights = [8.4, 8.4,null, 8.4, 6.0, 8.4, 6.0, null, 4.0, 8.4, null, 6.0, null, 6.0];
       this.weather = 'twilight';
     }
   }
 
   class Level3 extends Level {
     constructor() {
-        //alert('L3 cl')
       super('Level3')
-      this.heights = [8, null, 6, 4, 6, 4, 5, null, 4];
+      //this.heights = [8, null, 6, 4, 6, 4, 5, null, 4];
+      this.heights = [8.4, null, 8.4, 6.0, 8.4, 6.0, null, 4.0, 8.4, null, 6.0, null, 6.0];
       this.weather = 'morning';
     }
   }
@@ -591,9 +590,12 @@ class Outro extends Phaser.Scene {
         this.load.path = './assets/';
         this.load.image('campfire','campfire.gif')
         //this.load.image('campfire2','campfire.png')
-        this.load.spritesheet('campfire2','campfire.png',{ frameWidth: 32, frameHeight: 32});       
+        this.load.spritesheet('campfire2','campfire.png',{ frameWidth: 32, frameHeight: 32}); 
+        this.load.audio('summary_sound','running_and_falling.mp3');      
     }
     create() {
+
+        gameState.bgMusic.stop();
         gameState.campfire = this.add.sprite(500, 500, 'campfire2');
         gameState.campfire.setScale(300/gameState.campfire.height,150/gameState.campfire.width);
         this.add.text(100,50, gameState.levelKey+" Summary",{ fontFamily: 'Arial', size: 100, color: '#1940ff' }).setFontSize(90);
@@ -604,6 +606,8 @@ class Outro extends Phaser.Scene {
         this.add.text(310,225, "Number of Stars Collector: "+gameState.stars, { fontFamily: 'Arial', size: 20, color: '#fff' });
 
         
+        const transition = this.sound.add('summary_sound');
+        transition.play();
         this.anims.create({
             key: 'fire',
             frames: this.anims.generateFrameNumbers('campfire2'),
@@ -613,16 +617,16 @@ class Outro extends Phaser.Scene {
 
         if(gameState.nextLevel == 'Level1')
         {
-            this.add.text(300,375,"The next level will require some higher jumping", { fontFamily: 'Arial', size: 20, color: '#fff' });
+            this.add.text(300,375,"Ahh, the simple life.  Back to the past!", { fontFamily: 'Arial', size: 20, color: '#fff' });
 
         }
         else if(gameState.nextLevel == 'Level2')
         {
-            this.add.text(300,375,"Be mindful of the gaps on this next level",{ fontFamily: 'Arial', size: 20, color: '#fff' });
+            this.add.text(300,375,"If you dare proceed, two bullets will be thrown",{ fontFamily: 'Arial', size: 20, color: '#fff' });
         }
         else if(gameState.nextLevel == 'Level3')
         {
-            this.add.text(300,375,"nice job on making it to the end!", { fontFamily: 'Arial', size: 20, color: '#fff' });
+            this.add.text(300,375,"It will take courage to dodge three bullets on the next level.", { fontFamily: 'Arial', size: 20, color: '#fff' });
         }
 
         this.input.on('pointerdown', () => {
@@ -656,7 +660,7 @@ const config = {
         arcade: {
             gravity: { y: 300 },
             enableBody: true,
-            debug: true
+            //debug: true
         }
     },
     scene: [Level1, Level2, Level3, Outro]
